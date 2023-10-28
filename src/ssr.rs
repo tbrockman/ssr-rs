@@ -8,7 +8,8 @@ pub struct Ssr<'a> {
 }
 
 impl<'a> Ssr<'a> {
-    /// Create an instance of the Ssr struct instanciate the v8 platform as well.
+    /// Create an instance of the Ssr struct instanciate the v8 platform as
+    /// well.
     pub fn new(source: String, entry_point: &'a str) -> Self {
         Self::init_platform();
 
@@ -31,8 +32,8 @@ impl<'a> Ssr<'a> {
         lazy_static::initialize(&INIT_PLATFORM);
     }
 
-    /// Evaluates the javascript source code passed as argument and render it as a String.
-    /// Any initial params (if needed) must be passed as JSON.
+    /// Evaluates the javascript source code passed as argument and render it as
+    /// a String. Any initial params (if needed) must be passed as JSON.
     ///
     /// <a href="https://github.com/Valerioageno/ssr-rs/blob/main/examples/actix_with_initial_props.rs" target="_blank">Here</a> an useful example of how to use initial params with the actix framework.
     ///
@@ -57,14 +58,16 @@ impl<'a> Ssr<'a> {
         //A stack-allocated class that governs a number of local handles.
         let handle_scope = &mut v8::HandleScope::new(isolate);
 
-        //A sandboxed execution context with its own set of built-in objects and functions.
+        //A sandboxed execution context with its own set of built-in objects and
+        // functions.
         let context = v8::Context::new(handle_scope);
 
-        //Stack-allocated class which sets the execution context for all operations executed within a local scope.
+        //Stack-allocated class which sets the execution context for all operations
+        // executed within a local scope.
         let scope = &mut v8::ContextScope::new(handle_scope, context);
+        let value = format!("{};{}", source, entry_point);
 
-        let code = v8::String::new(scope, &format!("{};{}", source, entry_point))
-            .expect("Invalid JS: Strings are needed");
+        let code = v8::String::new(scope, &value).expect("Invalid JS: Strings are needed");
 
         let script = v8::Script::compile(scope, code, None)
             .expect("Invalid JS: There aren't runnable scripts");
@@ -107,14 +110,15 @@ impl<'a> Ssr<'a> {
     ) -> HashMap<String, v8::Local<'b, v8::Function>> {
         let mut fn_map: HashMap<String, v8::Local<v8::Function>> = HashMap::new();
 
-        if let Some(props) = object.get_own_property_names(scope) {
+        if let Some(props) = object.get_own_property_names(scope, Default::default()) {
             fn_map = Some(props)
                 .iter()
                 .enumerate()
                 .map(|(i, &p)| {
                     let name = p.get_index(scope, i as u32).unwrap();
 
-                    //A HandleScope which first allocates a handle in the current scope which will be later filled with the escape value.
+                    //A HandleScope which first allocates a handle in the current scope which will
+                    // be later filled with the escape value.
                     let mut scope = v8::EscapableHandleScope::new(scope);
 
                     let func = object.get(&mut scope, name).unwrap();
