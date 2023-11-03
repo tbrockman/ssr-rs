@@ -65,47 +65,61 @@ impl<'a> Ssr<'a> {
         //Stack-allocated class which sets the execution context for all operations
         // executed within a local scope.
         let scope = &mut v8::ContextScope::new(handle_scope, context);
+        let try_catch = &mut v8::TryCatch::new(scope);
+
         let value = format!("{};{}", source, entry_point);
 
-        let code = v8::String::new(scope, &value).expect("Invalid JS: Strings are needed");
+        let code = v8::String::new(try_catch, &value).expect("Invalid JS: Strings are needed");
 
-        let script = v8::Script::compile(scope, code, None)
+        let script = v8::Script::compile(try_catch, code, None)
             .expect("Invalid JS: There aren't runnable scripts");
 
         let exports = script
-            .run(scope)
+            .run(try_catch)
             .expect("Invalid JS: Missing entry point. Is the bundle exported as a variable?");
 
         let object = exports
-            .to_object(scope)
+            .to_object(try_catch)
             .expect("Invalid JS: There are no objects");
 
-        let fn_map = Self::create_fn_map(scope, object);
+        let fn_map = Self::create_fn_map(try_catch, object);
 
-        let params: v8::Local<v8::Value> = match v8::String::new(scope, params.unwrap_or("")) {
+        let params: v8::Local<v8::Value> = match v8::String::new(try_catch, params.unwrap_or("")) {
             Some(s) => s.into(),
-            None => v8::undefined(scope).into(),
+            None => v8::undefined(try_catch).into(),
         };
 
-        let undef = v8::undefined(scope).into();
+        let undef = v8::undefined(try_catch).into();
 
         let mut rendered = String::new();
 
         for key in fn_map.keys() {
-            let result = fn_map[key].call(scope, undef, &[params]).unwrap();
+            let result = match fn_map[key].call(try_catch, undef, &[params]) {
+                Some(s) => s,
+                None => {
+                    println!(
+                        "{}",
+                        try_catch
+                            .stack_trace()
+                            .unwrap()
+                            .to_rust_string_lossy(try_catch)
+                    );
+                    continue;
+                }
+            };
 
             let result = result
-                .to_string(scope)
+                .to_string(try_catch)
                 .expect("Failed to parse the result to string");
 
-            rendered = format!("{}{}", rendered, result.to_rust_string_lossy(scope));
+            rendered = format!("{}{}", rendered, result.to_rust_string_lossy(try_catch));
         }
 
         rendered
     }
 
     fn create_fn_map<'b>(
-        scope: &mut v8::ContextScope<'b, v8::HandleScope>,
+        scope: &mut v8::TryCatch<'b, v8::HandleScope>,
         object: v8::Local<v8::Object>,
     ) -> HashMap<String, v8::Local<'b, v8::Function>> {
         let mut fn_map: HashMap<String, v8::Local<v8::Function>> = HashMap::new();

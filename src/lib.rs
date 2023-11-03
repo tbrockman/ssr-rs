@@ -1,7 +1,8 @@
 #![doc(html_logo_url = "https://raw.githubusercontent.com/Valerioageno/ssr-rs/main/logo.png")]
 
 //!
-//! The project aims to enable server side rendering on rust servers in the simplest and lightest way possible.
+//! The project aims to enable server side rendering on rust servers in the
+//! simplest and lightest way possible.
 //!
 //! It use an embedded version of the v8 javascript engine (<a href="https://github.com/denoland/rusty_v8" target="_blank">rusty_v8</a>) to parse and evaluate a built bundle file and return a string with the rendered html.
 //!
@@ -15,7 +16,9 @@
 //!
 //!  # Example
 //!
-//! The whole logic is stored inside the <a href="./struct.Ssr.html#method.render_to_string">render_to_string()</a> function.
+//! The whole logic is stored inside the <a
+//! href="./struct.Ssr.html#method.render_to_string">render_to_string()</a>
+//! function.
 //!
 //! ```no_run
 //! use ssr_rs::Ssr;
@@ -57,8 +60,9 @@
 //!    
 //!     assert_eq!(html, "<!doctype html><html>...</html>".to_string());
 //! }
-//!```
-//! It's also possible just run the logic in a single shot just with Ssr::one_shot_render()
+//! ```
+//! It's also possible just run the logic in a single shot just with
+//! Ssr::one_shot_render()
 //!
 //! # Example single shot
 //!
